@@ -1375,24 +1375,23 @@ index 49650e54d2f8..49a8f9ea99bb 100644
  	if (sb->s_op->show_devname) {
  		seq_puts(m, "device ");
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 3f68186207a9..cb2dcf0954e0 100644
+index 3f68186207a9..97bdb2269978 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
-@@ -628,8 +628,19 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
+@@ -628,8 +628,18 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
  	return ret;
  }
  
 +#ifdef CONFIG_KSU_SUSFS
-+extern bool ksu_vfs_read_hook __read_mostly;
-+extern __attribute__((cold)) int ksu_handle_sys_read(unsigned int fd,
-+               char __user **buf_ptr, size_t *count_ptr);
++extern bool ksu_init_rc_hook __read_mostly;
++extern __attribute__((cold)) void ksu_handle_sys_read(unsigned int fd);
 +#endif
 +
  SYSCALL_DEFINE3(read, unsigned int, fd, char __user *, buf, size_t, count)
  {
 +#ifdef CONFIG_KSU_SUSFS
-+	if (unlikely(ksu_vfs_read_hook))
-+		ksu_handle_sys_read(fd, &buf, &count);
++	if (unlikely(ksu_init_rc_hook))
++		ksu_handle_sys_read(fd);
 +#endif
 +
  	return ksys_read(fd, buf, count);
@@ -1852,7 +1851,7 @@ index 09e8ed7d4161..fe6c96984ae4 100644
  	if (error >= 0)
  		error = buf.error;
 diff --git a/fs/stat.c b/fs/stat.c
-index 357a1db410ec..64835214d4f6 100644
+index 357a1db410ec..5aab27797eb6 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,10 @@
@@ -1931,6 +1930,30 @@ index 357a1db410ec..64835214d4f6 100644
  	if (flags & ~(AT_SYMLINK_NOFOLLOW | AT_NO_AUTOMOUNT | AT_EMPTY_PATH |
  		      AT_STATX_SYNC_TYPE))
  		return -EINVAL;
+@@ -401,6 +442,11 @@ SYSCALL_DEFINE2(newlstat, const char __user *, filename,
+ 	return cp_new_stat(&stat, statbuf);
+ }
+ 
++#ifdef CONFIG_KSU_SUSFS
++extern bool ksu_init_rc_hook __read_mostly;
++extern void ksu_handle_sys_newfstatat(int fd, loff_t *kstat_size_ptr);
++#endif // #ifdef CONFIG_KSU_SUSFS
++
+ #if !defined(__ARCH_WANT_STAT64) || defined(__ARCH_WANT_SYS_NEWFSTATAT)
+ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+ 		struct stat __user *, statbuf, int, flag)
+@@ -411,6 +457,11 @@ SYSCALL_DEFINE4(newfstatat, int, dfd, const char __user *, filename,
+ 	error = vfs_fstatat(dfd, filename, &stat, flag);
+ 	if (error)
+ 		return error;
++#ifdef CONFIG_KSU_SUSFS
++	if (unlikely(ksu_init_rc_hook)) {
++		ksu_handle_sys_newfstatat(dfd, &stat.size);
++	}
++#endif // #ifdef CONFIG_KSU_SUSFS
+ 	return cp_new_stat(&stat, statbuf);
+ }
+ #endif
 diff --git a/fs/statfs.c b/fs/statfs.c
 index 2a37f9f3dba1..056b171a848e 100644
 --- a/fs/statfs.c
