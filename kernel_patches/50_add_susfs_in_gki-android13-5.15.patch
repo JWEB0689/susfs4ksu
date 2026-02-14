@@ -1,6 +1,6 @@
 
 diff --git a/drivers/input/input.c b/drivers/input/input.c
-index 171f71bd4c2a..45f74060e825 100644
+index 171f71bd4..45f74060e 100644
 --- a/drivers/input/input.c
 +++ b/drivers/input/input.c
 @@ -375,6 +375,12 @@ static int input_get_disposition(struct input_dev *dev,
@@ -28,7 +28,7 @@ index 171f71bd4c2a..45f74060e825 100644
  		add_input_randomness(type, code, value);
  
 diff --git a/fs/Makefile b/fs/Makefile
-index e4adb988218c..2461d8986ee5 100644
+index e4adb9882..2461d8986 100644
 --- a/fs/Makefile
 +++ b/fs/Makefile
 @@ -18,6 +18,8 @@ obj-y :=	open.o read_write.o file_table.o super.o \
@@ -41,7 +41,7 @@ index e4adb988218c..2461d8986ee5 100644
  obj-y +=	buffer.o direct-io.o mpage.o
  else
 diff --git a/fs/devpts/inode.c b/fs/devpts/inode.c
-index 4f25015aa534..17e9e15af730 100644
+index 4f25015aa..17e9e15af 100644
 --- a/fs/devpts/inode.c
 +++ b/fs/devpts/inode.c
 @@ -24,6 +24,9 @@
@@ -81,7 +81,7 @@ index 4f25015aa534..17e9e15af730 100644
  		return NULL;
  	return dentry->d_fsdata;
 diff --git a/fs/exec.c b/fs/exec.c
-index b1b9db56a609..f977611ffee8 100644
+index b1b9db56a..f977611ff 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
 @@ -65,6 +65,9 @@
@@ -134,7 +134,7 @@ index b1b9db56a609..f977611ffee8 100644
  	 * We move the actual failure in case of RLIMIT_NPROC excess from
  	 * set*uid() to execve() because too many poorly written programs
 diff --git a/fs/namei.c b/fs/namei.c
-index ce97b60fe557..ef3ca832c5f8 100644
+index ce97b60fe..ef3ca832c 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
 @@ -39,10 +39,18 @@
@@ -435,7 +435,7 @@ index ce97b60fe557..ef3ca832c5f8 100644
  	return filp;
  }
 diff --git a/fs/namespace.c b/fs/namespace.c
-index 18d2d37f1e2f..00fd68dd24e4 100644
+index ff5e6455c..2390143f2 100644
 --- a/fs/namespace.c
 +++ b/fs/namespace.c
 @@ -32,10 +32,22 @@
@@ -690,7 +690,7 @@ index 18d2d37f1e2f..00fd68dd24e4 100644
  	if (!mnt)
  		return ERR_PTR(-ENOMEM);
  
-@@ -3447,6 +3643,9 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
+@@ -3462,6 +3658,9 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
  	copy_flags = CL_COPY_UNBINDABLE | CL_EXPIRE;
  	if (user_ns != ns->user_ns)
  		copy_flags |= CL_SHARED_TO_SLAVE;
@@ -700,7 +700,7 @@ index 18d2d37f1e2f..00fd68dd24e4 100644
  	new = copy_tree(old, old->mnt.mnt_root, copy_flags);
  	if (IS_ERR(new)) {
  		namespace_unlock();
-@@ -4654,3 +4853,42 @@ const struct proc_ns_operations mntns_operations = {
+@@ -4669,3 +4868,42 @@ const struct proc_ns_operations mntns_operations = {
  	.install	= mntns_install,
  	.owner		= mntns_owner,
  };
@@ -744,7 +744,7 @@ index 18d2d37f1e2f..00fd68dd24e4 100644
 +#endif
 +
 diff --git a/fs/notify/fdinfo.c b/fs/notify/fdinfo.c
-index 3451708fd035..0e4bffd80a43 100644
+index 3451708fd..0e4bffd80 100644
 --- a/fs/notify/fdinfo.c
 +++ b/fs/notify/fdinfo.c
 @@ -12,6 +12,9 @@
@@ -843,7 +843,7 @@ index 3451708fd035..0e4bffd80a43 100644
  			   inode_mark->wd, inode->i_ino, inode->i_sb->s_dev,
  			   inotify_mark_user_mask(mark));
 diff --git a/fs/open.c b/fs/open.c
-index 39779f1ba4e1..45e40bfebd6e 100644
+index 39779f1ba..45e40bfeb 100644
 --- a/fs/open.c
 +++ b/fs/open.c
 @@ -33,6 +33,9 @@
@@ -890,7 +890,7 @@ index 39779f1ba4e1..45e40bfebd6e 100644
  		return -EINVAL;
  
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 7624ae2c115c..c6be61cb9c81 100644
+index 7624ae2c1..c6be61cb9 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -100,6 +100,9 @@
@@ -953,7 +953,7 @@ index 7624ae2c115c..c6be61cb9c81 100644
  			continue;
  
 diff --git a/fs/proc/bootconfig.c b/fs/proc/bootconfig.c
-index 2e244ada1f97..792e1cb04b11 100644
+index 2e244ada1..792e1cb04 100644
 --- a/fs/proc/bootconfig.c
 +++ b/fs/proc/bootconfig.c
 @@ -12,8 +12,19 @@
@@ -977,7 +977,7 @@ index 2e244ada1f97..792e1cb04b11 100644
  		seq_puts(m, saved_boot_config);
  	return 0;
 diff --git a/fs/proc/fd.c b/fs/proc/fd.c
-index 913bef0d2a36..0f416b960f7f 100644
+index 913bef0d2..0f416b960 100644
 --- a/fs/proc/fd.c
 +++ b/fs/proc/fd.c
 @@ -13,6 +13,9 @@
@@ -1055,7 +1055,7 @@ index 913bef0d2a36..0f416b960f7f 100644
  	/* show_fd_locks() never deferences files so a stale value is safe */
  	show_fd_locks(m, file, files);
 diff --git a/fs/proc/task_mmu.c b/fs/proc/task_mmu.c
-index d56513a56bae..e62158efb41d 100644
+index 3823dfae5..1f2b94cde 100644
 --- a/fs/proc/task_mmu.c
 +++ b/fs/proc/task_mmu.c
 @@ -21,6 +21,9 @@
@@ -1117,7 +1117,7 @@ index d56513a56bae..e62158efb41d 100644
  		pgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;
  	}
  
-@@ -855,6 +891,26 @@ static int show_smap(struct seq_file *m, void *v)
+@@ -862,6 +898,26 @@ static int show_smap(struct seq_file *m, void *v)
  	if (!vma_pages(vma))
  		goto show_pad;
  
@@ -1144,7 +1144,7 @@ index d56513a56bae..e62158efb41d 100644
  	smap_gather_stats(vma, &mss, 0);
  
  	show_map_vma(m, vma);
-@@ -907,7 +963,19 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
+@@ -914,7 +970,19 @@ static int show_smaps_rollup(struct seq_file *m, void *v)
  	hold_task_mempolicy(priv);
  
  	for (vma = priv->mm->mmap; vma;) {
@@ -1164,7 +1164,7 @@ index d56513a56bae..e62158efb41d 100644
  		last_vma_end = vma->vm_end;
  
  		/*
-@@ -1635,6 +1703,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1642,6 +1710,9 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  	unsigned long start_vaddr;
  	unsigned long end_vaddr;
  	int ret = 0, copied = 0;
@@ -1174,7 +1174,7 @@ index d56513a56bae..e62158efb41d 100644
  
  	if (!mm || !mmget_not_zero(mm))
  		goto out;
-@@ -1691,6 +1762,17 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
+@@ -1698,6 +1769,17 @@ static ssize_t pagemap_read(struct file *file, char __user *buf,
  			goto out_free;
  		ret = walk_page_range(mm, start_vaddr, end, &pagemap_ops, &pm);
  		mmap_read_unlock(mm);
@@ -1193,7 +1193,7 @@ index d56513a56bae..e62158efb41d 100644
  
  		len = min(count, PM_ENTRY_BYTES * pm.pos);
 diff --git a/fs/proc_namespace.c b/fs/proc_namespace.c
-index 49650e54d2f8..2aea330e8228 100644
+index 49650e54d..2aea330e8 100644
 --- a/fs/proc_namespace.c
 +++ b/fs/proc_namespace.c
 @@ -12,12 +12,20 @@
@@ -1266,7 +1266,7 @@ index 49650e54d2f8..2aea330e8228 100644
  	if (sb->s_op->show_devname) {
  		seq_puts(m, "device ");
 diff --git a/fs/read_write.c b/fs/read_write.c
-index 3f68186207a9..97bdb2269978 100644
+index 3f6818620..97bdb2269 100644
 --- a/fs/read_write.c
 +++ b/fs/read_write.c
 @@ -628,8 +628,18 @@ ssize_t ksys_read(unsigned int fd, char __user *buf, size_t count)
@@ -1289,7 +1289,7 @@ index 3f68186207a9..97bdb2269978 100644
  }
  
 diff --git a/fs/readdir.c b/fs/readdir.c
-index 09e8ed7d4161..2eed8acf69e8 100644
+index 09e8ed7d4..2eed8acf6 100644
 --- a/fs/readdir.c
 +++ b/fs/readdir.c
 @@ -24,6 +24,10 @@
@@ -1550,7 +1550,7 @@ index 09e8ed7d4161..2eed8acf69e8 100644
  	if (error >= 0)
  		error = buf.error;
 diff --git a/fs/stat.c b/fs/stat.c
-index 357a1db410ec..a5951c945255 100644
+index 357a1db41..a5951c945 100644
 --- a/fs/stat.c
 +++ b/fs/stat.c
 @@ -17,6 +17,10 @@
@@ -1653,7 +1653,7 @@ index 357a1db410ec..a5951c945255 100644
  		      AT_STATX_SYNC_TYPE))
  		return -EINVAL;
 diff --git a/fs/statfs.c b/fs/statfs.c
-index 2a37f9f3dba1..056b171a848e 100644
+index 2a37f9f3d..056b171a8 100644
 --- a/fs/statfs.c
 +++ b/fs/statfs.c
 @@ -9,6 +9,10 @@
@@ -1692,7 +1692,7 @@ index 2a37f9f3dba1..056b171a848e 100644
  EXPORT_SYMBOL_NS(vfs_statfs, ANDROID_GKI_VFS_EXPORT_ONLY);
  
 diff --git a/include/linux/mount.h b/include/linux/mount.h
-index 9fc79930799e..0da7c62eb846 100644
+index 9fc799307..0da7c62eb 100644
 --- a/include/linux/mount.h
 +++ b/include/linux/mount.h
 @@ -78,7 +78,11 @@ struct vfsmount {
@@ -1708,7 +1708,7 @@ index 9fc79930799e..0da7c62eb846 100644
  
  static inline struct user_namespace *mnt_user_ns(const struct vfsmount *mnt)
 diff --git a/kernel/kallsyms.c b/kernel/kallsyms.c
-index e0d9f77cf2d4..d5e222555a60 100644
+index e0d9f77cf..d5e222555 100644
 --- a/kernel/kallsyms.c
 +++ b/kernel/kallsyms.c
 @@ -738,6 +738,10 @@ static void s_stop(struct seq_file *m, void *p)
@@ -1760,7 +1760,7 @@ index e0d9f77cf2d4..d5e222555a60 100644
  }
  
 diff --git a/kernel/reboot.c b/kernel/reboot.c
-index 5105f2a46359..760a21c6e311 100644
+index 5105f2a46..760a21c6e 100644
 --- a/kernel/reboot.c
 +++ b/kernel/reboot.c
 @@ -305,6 +305,9 @@ EXPORT_SYMBOL_GPL(kernel_power_off);
@@ -1790,7 +1790,7 @@ index 5105f2a46359..760a21c6e311 100644
  	if (!ns_capable(pid_ns->user_ns, CAP_SYS_BOOT))
  		return -EPERM;
 diff --git a/kernel/sys.c b/kernel/sys.c
-index 0e76093073c7..463728f51fb0 100644
+index 0e7609307..463728f51 100644
 --- a/kernel/sys.c
 +++ b/kernel/sys.c
 @@ -647,6 +647,9 @@ SYSCALL_DEFINE1(setuid, uid_t, uid)
@@ -1834,7 +1834,7 @@ index 0e76093073c7..463728f51fb0 100644
  	if (copy_to_user(name, &tmp, sizeof(tmp)))
  		return -EFAULT;
 diff --git a/security/selinux/avc.c b/security/selinux/avc.c
-index 2ee2c8a315e7..35e45b968cd2 100644
+index 2ee2c8a31..35e45b968 100644
 --- a/security/selinux/avc.c
 +++ b/security/selinux/avc.c
 @@ -47,6 +47,12 @@
