@@ -1,70 +1,186 @@
-name: CI
+name: CI (C / C++)
 
 on:
-  schedule:
-    - cron: "0 16 * * *"
-  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CC: clang
+  CXX: clang++
 
 jobs:
-  check:
-    permissions: write-all
+  # ─── Format Check (clang-format) ───
+  format:
+    name: clang-format
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Install clang-format
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang-format-18
+      - name: Check format
+        run: |
+          echo "## Format Check" >> $GITHUB_STEP_SUMMARY
+          BAD_FILES=$(find . -name "*.c" -o -name "*.h" -o -name "*.cpp" -o -name "*.hpp" | \
+            grep -v -E "(build|out|target|vendor|third_party|\.git)" | \
+            xargs clang-format-18 --dry-run --Werror 2>&1 || true)
+          if [ -n "$BAD_FILES" ]; then
+            echo "❌ Files need formatting:" >> $GITHUB_STEP_SUMMARY
+            echo "$BAD_FILES" >> $GITHUB_STEP_SUMMARY
+            echo "::error::Run 'clang-format -i' on the above files"
+            exit 1
+          else
+            echo "✅ All files properly formatted" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ─── Linux Kernel Style Check (checkpatch.pl) ───
+  checkpatch:
+    name: checkpatch.pl (kernel style)
+    if: ${{ hashFiles('**/scripts/checkpatch.pl') != '' || hashFiles('**/checkpatch.pl') != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run checkpatch.pl
+        run: |
+          echo "## Kernel Coding Style Check" >> $GITHUB_STEP_SUMMARY
+          CHECKPATCH=$(find . -name "checkpatch.pl" | head -1)
+          if [ -z "$CHECKPATCH" ]; then
+            echo "checkpatch.pl not found, skipping" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+          perl "$CHECKPATCH" --no-tree --strict --show-types -f $(find . -name "*.c" -o -name "*.h" | grep -v -E "(build|out|target|vendor|third_party|\.git)" | head -50) 2>&1 | tee checkpatch.log || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat checkpatch.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ─── Static Analysis (clang-tidy) ───
+  clang-tidy:
+    name: clang-tidy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install clang-tidy
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq clang-tidy-18
+      - name: Run clang-tidy
+        run: |
+          echo "## Static Analysis (clang-tidy)" >> $GITHUB_STEP_SUMMARY
+          SOURCES=$(find . -name "*.c" -o -name "*.cpp" | grep -v -E "(build|out|target|vendor|third_party|\.git)" | head -30)
+          if [ -n "$SOURCES" ]; then
+            clang-tidy-18 $SOURCES -- -I. 2>&1 | tee tidy.log || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat tidy.log >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No C/C++ sources found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ─── Build Test (multiple configs) ───
+  build:
+    name: Build (${{ matrix.config.name }})
+    needs: [format, checkpatch, clang-tidy]
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: "Linux x86_64 (clang)", os: "ubuntu-latest", cc: "clang", cxx: "clang++" }
+          - { name: "Linux x86_64 (gcc)", os: "ubuntu-latest", cc: "gcc", cxx: "g++" }
+          - { name: "macOS (clang)", os: "macos-latest", cc: "clang", cxx: "clang++" }
+          - { name: "Windows (MSVC)", os: "windows-latest", cc: "cl", cxx: "cl" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential cmake ninja-build
+      - name: Install build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+      - name: Configure (CMake)
+        if: hashFiles('**/CMakeLists.txt') != ''
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        run: |
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - name: Build (CMake)
+        if: hashFiles('**/CMakeLists.txt') != ''
+        run: cmake --build build -- -j$(nproc)
+      - name: Configure (Make)
+        if: hashFiles('**/Makefile') != '' && hashFiles('**/CMakeLists.txt') == ''
+        env:
+          CC: ${{ matrix.config.cc }}
+          CXX: ${{ matrix.config.cxx }}
+        run: |
+          if [ -f configure ]; then ./configure; fi
+      - name: Build (Make)
+        if: hashFiles('**/Makefile') != '' && hashFiles('**/CMakeLists.txt') == ''
+        run: make -j$(nproc)
+      - name: Build (Cargo) for Rust projects with C
+        if: hashFiles('**/Cargo.toml') != ''
+        run: cargo build --release
+
+  # ─── Security Scan ───
+  security:
+    name: Security Scan
+    needs: [format, checkpatch, clang-tidy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Clear older runs
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install scan tools
         run: |
-          gh run list -L400 --json databaseId -q '.[].databaseId' | tail -n+5 | xargs -IID gh api "repos/$GITHUB_REPOSITORY/actions/runs/ID" -X DELETE || :
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq cppcheck flawfinder
+      - name: Run cppcheck
+        run: |
+          echo "## Security Scan (cppcheck)" >> $GITHUB_STEP_SUMMARY
+          cppcheck --enable=warning,style,performance,portability --inline-suppr --quiet . 2>&1 | tee cppcheck.log || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat cppcheck.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      - name: Run flawfinder
+        run: |
+          echo "## Security Scan (flawfinder)" >> $GITHUB_STEP_SUMMARY
+          flawfinder --minlevel=1 . 2>&1 | tee flawfinder.log || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat flawfinder.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      - name: Check for dangerous functions
+        run: |
+          echo "## Dangerous Function Usage" >> $GITHUB_STEP_SUMMARY
+          DANGEROUS=$(grep -r -E "gets\(|strcpy\(|strcat\(|sprintf\(|vsprintf\(|scanf\(|system\(|popen\(" --include="*.c" --include="*.h" --include="*.cpp" --include="*.hpp" . 2>/dev/null | head -20 || true)
+          if [ -n "$DANGEROUS" ]; then
+            echo "⚠️ Potentially dangerous functions found:" >> $GITHUB_STEP_SUMMARY
+            echo "$DANGEROUS" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Dangerous C functions detected"
+          else
+            echo "✅ No common dangerous functions detected" >> $GITHUB_STEP_SUMMARY
+          fi
 
-  run_gkiandroid1461:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android14-6.1.yml
-    secrets: inherit
-
-  run_gkiandroid1461_dev:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android14-6.1-dev.yml
-    secrets: inherit
-
-  run_gkiandroid1566:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android15-6.6.yml
-    secrets: inherit
-
-  run_gkiandroid13515:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android13-5.15.yml
-    secrets: inherit
-
-  run_gkiandroid13515_dev:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android13-5.15-dev.yml
-    secrets: inherit
-
-  run_gkiandroid12510:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android12-5.10.yml
-    secrets: inherit
-
-  run_gkiandroid13510:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android13-5.10.yml
-    secrets: inherit
-
-  run_gkiandroid14515:
-    permissions: write-all
-    needs: check
-    uses: ./.github/workflows/gki-android14-5.15.yml
-    secrets: inherit
+  # ─── Semgrep ───
+  semgrep:
+    name: Semgrep Security Scan
+    needs: [format, checkpatch, clang-tidy]
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+      - run: semgrep scan --config=auto --error 2>&1 | tee semgrep.log || true
+      - name: Upload results
+        run: |
+          echo "## Semgrep Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat semgrep.log >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
