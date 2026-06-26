@@ -21,7 +21,7 @@ This project follows the [Contributor Covenant Code of Conduct](https://www.cont
 
 ### Prerequisites
 
-- Linux kernel build environment, clang/llvm, make, flex, bison, libssl-dev, libelf-dev, bc, python3
+- Linux kernel build environment, clang/llvm, make, gcc, shellcheck
 
 ### Setup
 
@@ -31,10 +31,10 @@ git clone https://github.com/JWEB0689/susfs4ksu.git
 cd susfs4ksu
 
 # Install dependencies
-No install needed - kernel patch project
+make -C ksu_module_susfs && make -C ksu_susfs
 
 # Run tests to verify setup
-Run shellcheck on scripts, verify patches apply cleanly
+shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && ./test.sh
 ```
 
 ## Development Workflow
@@ -47,8 +47,8 @@ Run shellcheck on scripts, verify patches apply cleanly
 3. **Make your changes** following the code standards below
 4. **Run tests and linting** locally:
    ```bash
-   shellcheck *.sh {{LINT_CMD}}{{LINT_CMD}} clang-format --dry-run --Werror kernel_patches/*.c kernel_patches/*.h
-   Run shellcheck on scripts, verify patches apply cleanly
+   shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && clang-format --dry-run --Werror kernel_patches/*.c kernel_patches/*.h
+   shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && ./test.sh
    ```
 5. **Commit** with conventional commits:
    ```bash
@@ -83,21 +83,24 @@ Types:
 
 ### Language-Specific Standards
 
-### C/Kernel Patches
-- Follow Linux kernel coding style (checkpatch.pl)
-- Use clang-format with LLVM style
-- All patches must apply cleanly to target kernel version
-- No warnings with -Werror
-- Shell scripts: shellcheck clean
+### C/Kernel
+- Follow Linux kernel coding style
+- Use clang-format
+- All kernel patches apply cleanly
+
+### Shell Scripts
+- shellcheck clean
+- Use functions, avoid global variables
+- Quote all variables
 
 ### Formatting
 
-- Run the formatter before committing: `clang-format -i kernel_patches/*.c kernel_patches/*.h`
+- Run the formatter before committing: `clang-format -i kernel_patches/*.c kernel_patches/*.h && shellcheck *.sh`
 - CI will fail if code is not properly formatted
 
 ### Linting
 
-- Run linter before committing: `shellcheck *.sh {{LINT_CMD}}{{LINT_CMD}} clang-format --dry-run --Werror kernel_patches/*.c kernel_patches/*.h`
+- Run linter before committing: `shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && clang-format --dry-run --Werror kernel_patches/*.c kernel_patches/*.h`
 - No new lint warnings allowed
 
 ## Testing
@@ -105,7 +108,7 @@ Types:
 ### Running Tests
 
 ```bash
-Run shellcheck on scripts, verify patches apply cleanly
+shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && ./test.sh
 ```
 
 ### Test Requirements
@@ -140,9 +143,9 @@ Run shellcheck on scripts, verify patches apply cleanly
 
 ### Before Submitting
 
-- [ ] Tests pass locally (`Run shellcheck on scripts, verify patches apply cleanly`)
-- [ ] Linting passes (`shellcheck *.sh {{LINT_CMD}}{{LINT_CMD}} clang-format --dry-run --Werror kernel_patches/*.c kernel_patches/*.h`)
-- [ ] Formatting correct (`clang-format -i kernel_patches/*.c kernel_patches/*.h`)
+- [ ] Tests pass locally (`shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && ./test.sh`)
+- [ ] Linting passes (`shellcheck *.sh ksu_module_susfs/*.sh ksu_susfs/*.sh && clang-format --dry-run --Werror kernel_patches/*.c kernel_patches/*.h`)
+- [ ] Formatting correct (`clang-format -i kernel_patches/*.c kernel_patches/*.h && shellcheck *.sh`)
 - [ ] Documentation updated
 - [ ] CHANGELOG.md updated (under "Unreleased")
 - [ ] Conventional commit messages

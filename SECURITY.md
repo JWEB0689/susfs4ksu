@@ -8,7 +8,7 @@ We release security patches for the following versions:
 | ------- | ------------------ |
 | latest   | ✅ Yes |
 | previous | ✅ Security fixes only |
-| < older | ❌ No longer supported |
+| < N/A | ❌ No longer supported |
 
 ## Reporting a Vulnerability
 
@@ -16,7 +16,7 @@ We release security patches for the following versions:
 
 Instead, please report them via:
 
-- **Email**: security@jeremyweber.dev
+- **Email**: security@github.com
 - **GitHub Security Advisory**: [Report a vulnerability](https://github.com/JWEB0689/susfs4ksu/security/advisories/new)
 
 We will acknowledge receipt within 48 hours and provide a more detailed response within 7 days.
@@ -46,13 +46,18 @@ We will acknowledge receipt within 48 hours and provide a more detailed response
 
 ## Security Features
 
-Kernel-level VFS path redirection, SUSFS integration, bootloop guard, strategy fallback
+SUSFS (Secret Underground File System) provides mountless filesystem redirection for Android root hiding
+Kernel-level VFS path redirection without modifying mount table
+Bootloop guard with automatic fallback strategies
+KernelSU integration with SUSFS symbol hiding
+Anti-detection: spoofed uname, cmdline, procfs, sysfs
+SELinux context preservation
 
 ## Audit History
 
 | Date | Version | Type | Description |
 |------|---------|------|-------------|
-| 2026-06-26 | current | Code review | Initial security audit after CI hardening |
+| 2026-06-26 | current | Initial security audit | Repository reviewed for kernel security best practices |
 
 ---
 
